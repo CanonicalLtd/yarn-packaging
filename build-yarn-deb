@@ -16,24 +16,34 @@ tar xf $TARBALL -C $UNPACKED_DIR
 
 version=$(jq -r .version < $UNPACKED_DIR/dist/package.json)
 
+cd $UNPACKED_DIR
+
 # Cleanup package structure
-mkdir -p $UNPACKED_DIR/usr/share/yarn/
-mkdir -p $UNPACKED_DIR/usr/share/doc/yarn/
-mv $UNPACKED_DIR/dist/bin $UNPACKED_DIR/usr/share/yarn/
-mv $UNPACKED_DIR/dist/lib $UNPACKED_DIR/usr/share/yarn/
-mv $UNPACKED_DIR/dist/lib-legacy $UNPACKED_DIR/usr/share/yarn/
-mv $UNPACKED_DIR/dist/node_modules $UNPACKED_DIR/usr/share/yarn/
-mv $UNPACKED_DIR/dist/package.json $UNPACKED_DIR/usr/share/yarn/
+mkdir -p usr/share/yarn/
+mkdir -p usr/share/doc/yarn/
+mv dist/bin usr/share/yarn/
+mv dist/lib usr/share/yarn/
+mv dist/lib-legacy usr/share/yarn/
+mv dist/node_modules usr/share/yarn/
+mv dist/package.json usr/share/yarn/
+rm -rf dist
+sed -i 's/basedir\=\$.*/basedir=\/usr\/share\/yarn\/bin/' usr/share/yarn/bin/yarn
+# Link binaries
+mkdir -p usr/bin/
+ln -s /usr/share/yarn/bin/yarn usr/bin/yarn
+ln -s /usr/share/yarn/bin/yarn usr/bin/yarnpkg
 
-cp -a $BASEDIR/debian $UNPACKED_DIR
-sed -i "s/%VERSION%/$version/" $UNPACKED_DIR/debian/changelog
+rm -f usr/share/yarn/node_modules/node-uuid/benchmark/bench.gnu
+find usr/share/yarn \( -name '*.md' -o  -name '*.md~' -o -name '*.gitmodules' \) -delete
 
-(cd $UNPACKED_DIR
- dpkg-buildpackage -S
- dpkg-buildpackage -b
-)
+
+cp -a $BASEDIR/debian .
+dch --package yarn --create -D $(ls) -v ${version}-1 "Build version $version."
+
+dpkg-buildpackage -S
+dpkg-buildpackage -b
 
 mkdir -p $OUTPUT_DIR
-cp -a $UNPACKED_DIR/../yarn_* $OUTPUT_DIR
+cp -a ../yarn_* $OUTPUT_DIR
 
 rm -rf $tmp_dir
