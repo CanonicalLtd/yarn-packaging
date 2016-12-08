@@ -7,6 +7,9 @@ TARBALL_URL="https://yarnpkg.com/$TARBALL"
 UNPACKED_DIR="unpack"
 OUTPUT_DIR="$BASEDIR/output"
 
+build_rev="1"
+[ "$1" ] && build_rev="$1"
+
 tmp_dir=$(mktemp -d)
 cd $tmp_dir
 
@@ -38,7 +41,8 @@ find usr/share/yarn \( -name '*.md' -o  -name '*.md~' -o -name '*.gitmodules' \)
 
 
 cp -a $BASEDIR/debian .
-dch --package yarn --create -D $(ls) -v ${version}-1 "Build version $version."
+distro=$(lsb_release -cs)
+dch --package yarn --create -D $distro -v ${version}-${build_rev} "Build version $version."
 
 dpkg-buildpackage -S
 dpkg-buildpackage -b
