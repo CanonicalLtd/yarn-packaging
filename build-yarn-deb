@@ -1,0 +1,39 @@
+#!/bin/bash
+
+BASEDIR="$PWD"
+
+TARBALL="latest.tar.gz"
+TARBALL_URL="https://yarnpkg.com/$TARBALL"
+UNPACKED_DIR="unpack"
+OUTPUT_DIR="$BASEDIR/output"
+
+tmp_dir=$(mktemp -d)
+cd $tmp_dir
+
+wget $TARBALL_URL -O $TARBALL
+mkdir $UNPACKED_DIR
+tar xf $TARBALL -C $UNPACKED_DIR
+
+version=$(jq -r .version < $UNPACKED_DIR/dist/package.json)
+
+# Cleanup package structure
+mkdir -p $UNPACKED_DIR/usr/share/yarn/
+mkdir -p $UNPACKED_DIR/usr/share/doc/yarn/
+mv $UNPACKED_DIR/dist/bin $UNPACKED_DIR/usr/share/yarn/
+mv $UNPACKED_DIR/dist/lib $UNPACKED_DIR/usr/share/yarn/
+mv $UNPACKED_DIR/dist/lib-legacy $UNPACKED_DIR/usr/share/yarn/
+mv $UNPACKED_DIR/dist/node_modules $UNPACKED_DIR/usr/share/yarn/
+mv $UNPACKED_DIR/dist/package.json $UNPACKED_DIR/usr/share/yarn/
+
+cp -a $BASEDIR/debian $UNPACKED_DIR
+sed -i "s/%VERSION%/$version/" $UNPACKED_DIR/debian/changelog
+
+(cd $UNPACKED_DIR
+ dpkg-buildpackage -S
+ dpkg-buildpackage -b
+)
+
+mkdir -p $OUTPUT_DIR
+cp -a $UNPACKED_DIR/../yarn_* $OUTPUT_DIR
+
+rm -rf $tmp_dir
