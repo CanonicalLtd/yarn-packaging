@@ -1,0 +1,13 @@
+Description: Fix broken case statement in /usr/bin/yarn
+Author: Adam Collard <adam.collard@canonical.com>
+Last-Update: 2017-03-17--- a/usr/share/yarn/bin/yarn
++++ b/usr/share/yarn/bin/yarn
+@@ -5,7 +5,7 @@
+ use_winpty=0
+ 
+ case "$(uname -s)" in
+-  Linux) basedir=/usr/share/yarn/bin
++  Linux) basedir=/usr/share/yarn/bin;;
+   *CYGWIN*) basedir=`cygpath -w "$basedir"`;;
+   MSYS*|MINGW*) use_winpty=1;;
+ esac
